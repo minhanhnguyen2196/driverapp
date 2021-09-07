@@ -13,6 +13,7 @@
     "react-native": "0.55.0",
     "react-native-animatable": "^1.2.4",
     "react-native-countdown-circle": "^3.0.0",
+    "react-native-interactable": "^0.1.10",
     "react-native-maps": "^0.20.1",
     "react-native-maps-directions": "^1.6.0",
     "react-native-slide-button": "https://github.com/sreejithr/react-native-slide-button",

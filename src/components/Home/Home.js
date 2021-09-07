@@ -1,13 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Text, Image } from 'react-native';
+import { View, StyleSheet, Dimensions, Text } from 'react-native';
 import { connect } from 'react-redux';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, AnimatedRegion } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import ToggleSwitch from 'toggle-switch-react-native';
 import CountdownCircleScreen from '../RiderRequestScreen/CountdownCircle';
 import EndTripButton from './EndTripButton';
 import BeginTripButton from './BeginTripButton';
 import Header from './Header';
+import RiderProfile from './RiderProfile';
 import { getCurrentLocation, updateTripStatus, clearState, getCurrentData } from '../../redux/actionCreators';
 import getAccessToken from '../Authentication/getAccessToken';
 
@@ -18,30 +19,49 @@ const human = require('../../img/human.png');
 console.disableYellowBox = true;
 class Home extends React.Component {
   constructor(props) {
-      super(props);
-      this.updateCurrentLocation = this.updateCurrentLocation.bind(this);
-      this.getCurrentLatLng = this.getCurrentLatLng.bind(this);
-      this.updateCurrentStatus = this.updateCurrentStatus.bind(this);
-      this.state = { 
-        available: false,
-        initialPosition: {
-          latitude: 0,
-          longitude: 0,
-          latitudeDelta: 0,
-          longitudeDelta: 0
-        },
-        markerPosition: {
-          latitude: 0,
-          longitude: 0
-        }
-       };
-      console.disableYellowBox = true;
+    super(props);
+    this.updateCurrentLocation = this.updateCurrentLocation.bind(this);
+    this.getCurrentLatLng = this.getCurrentLatLng.bind(this);
+    this.updateCurrentStatus = this.updateCurrentStatus.bind(this);
+    this.state = { 
+      available: false,
+      rotationAngle: null,
+      coordinate: new AnimatedRegion({
+        latitude: this.props.region.latitude,
+        longitude: this.props.region.longitude,
+      }),
+     };
   }
 
   componentDidMount() {
     this.getCurrentLatLng();
   }
   
+  
+  componentWillReceiveProps(nextProps) {
+    if (this.props.region.latitude !== nextProps.region.latitude) {
+      const { coordinate } = this.state;
+      const newCoordinate = {
+        latitude: nextProps.region.latitude,
+        longitude: nextProps.region.longitude
+      };
+      if (this.marker) {
+        const newRotationAngle = this.getRotationAngle(
+        this.props.region,
+        nextProps.region);
+        this.setState({ rotationAngle: newRotationAngle });
+        this.marker._component.animateMarkerToCoordinate(newCoordinate, 4000);
+        //this.marker._component.showCallout();
+      } else {
+      coordinate.timing(newCoordinate).start();
+      } 
+    }
+  }
+  
+  componentDidUpdate(prevProps, prevState) {
+    console.log(this.props.booking);
+  }
+ 
   componentWillUnmount() {
     navigator.geolocation.clearWatch(this.watchID);
   }
@@ -50,41 +70,31 @@ class Home extends React.Component {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.props.getCurrentLocation(position);
-        var region = {
-          latitude: this.props.region.latitude,
-          longitude: this.props.region.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01
-        };
-        var markerLocation = {
-          latitude: this.props.region.latitude,
-          longitude: this.props.region.longitude,
-        };
-        this.setState({
-          initialPosition: region,
-          markerPosition: markerLocation
-        });
     },
     (error) => console.log(JSON.stringify(error)),
     { enableHighAccuracy: false, timeout: 20000 }
     );
 
     this.watchID = navigator.geolocation.watchPosition((position) => {
-      var lastRegion = {
-        latitude: parseFloat(position.coords.latitude),
-        longitude: parseFloat(position.coords.longitude),
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01
-      };
-      this.setState({ initialPosition: lastRegion, markerPosition: lastRegion });
+      this.props.getCurrentLocation(position);
     }, (error) => console.log(JSON.stringify(error)), 
     );
   }
 
-  
+   getRotationAngle = (previousPosition, currentPosition) => {
+    const x1 = previousPosition.latitude;
+    const y1 = previousPosition.longitude;
+    const x2 = currentPosition.latitude;
+    const y2 = currentPosition.longitude;
+
+    const xDiff = x2 - x1;
+    const yDiff = y2 - y1;
+    return (Math.atan2(yDiff, xDiff) * 180.0) / Math.PI;
+  };
+
   updateCurrentLocation = () => {
     const currentLocation = {
-      locationId: '5a9655d9734d1d3655e9623c',
+      locationId: '5a965393734d1d3655e960fd',
       latitude: this.props.region.latitude,
       longitude: this.props.region.longitude, 
   };
@@ -110,7 +120,7 @@ class Home extends React.Component {
 
   updateCurrentStatus = (available) => {
     const currentLocation = {
-      locationId: '5a9655d9734d1d3655e9623c',
+      locationId: '5a965393734d1d3655e960fd',
       status: available ? 'available' : 'not available'
   };
 
@@ -134,14 +144,8 @@ class Home extends React.Component {
   }
 
   updateLocationToServer = () => {
-    var interval = setInterval(() => {
-      if (this.state.available) {
-        this.getCurrentLatLng();
-        this.updateCurrentLocation();
-      } else {
-        clearInterval(interval);
-      }
-    }, 3000); 
+      this.getCurrentLatLng();
+      this.updateCurrentLocation();
   }
 
 
@@ -168,11 +172,16 @@ class Home extends React.Component {
         <View style={{ flex: 1 }}>
           <MapView
             style={styles.map}
-            region={this.state.initialPosition}
+            region={region}
           >
-            <Marker
-              coordinate={this.state.markerPosition}
+            <Marker.Animated
+              coordinate={{
+                latitude: region.latitude,
+                longitude: region.longitude
+              }}
               image={carMarker}
+              ref={marker => { this.marker = marker; }}
+              rotation={this.state.rotationAngle}
             />
           {
             pickUp.latitude && 
@@ -181,7 +190,7 @@ class Home extends React.Component {
                   latitude: parseFloat(pickUp.latitude),
                   longitude: parseFloat(pickUp.longitude)
               }}
-              image={human}
+              pinColor='green'
             />
           }
 
@@ -208,10 +217,14 @@ class Home extends React.Component {
           }
           </MapView>
           <Header />
-          <View style={{ width, height: 50, backgroundColor: '#fff', alignItems: 'center', flexDirection: 'row' }}>
+           {
+              (status !== 'confirmed') && 
+
+              <View style={{ width, height: 50, backgroundColor: '#fff', alignItems: 'center', flexDirection: 'row' }}>
               <View style={{ justifyContent: 'flex-start', margin: 10, paddingRight: 190 }}>
-                  <Text style={{ color: 'black' }}> Available </Text>
+                  <Text style={{ color: '#18722a' }}> Available </Text>
               </View>
+
               <View style={{ margin: 10, justifyContent: 'flex-end' }}>
                 <ToggleSwitch 
                   isOn={this.state.available}
@@ -228,16 +241,12 @@ class Home extends React.Component {
                 />
               </View>
           </View>
-          <View style={{ position: 'absolute', left: 10, right: 10, bottom: 40 }}>
-          {
-              (status === 'confirmed') && <BeginTripButton updateTripStatus={this.props.updateTripStatus} />
-          }
+          } 
           
-          </View>
-            {
-              (status === 'started') && 
-              <EndTripButton updateTripStatus={this.props.updateTripStatus} />
-            }
+          {
+            (status === 'confirmed' || status === 'started') &&  <RiderProfile />
+          }
+         
           </View>
         ) : 
           <CountdownCircleScreen 
@@ -268,9 +277,17 @@ export default connect(mapStateToProps,
 const styles = StyleSheet.create({
   container: {
       flex: 1,
+      alignItems: 'center' 
   },
   map: {
   ...StyleSheet.absoluteFillObject
   }
 });
 
+   // {
+   //            (status === 'confirmed') && 
+   //        }
+
+    // {
+    //         (status === 'confirmed' || status === 'started') &&  
+    //       }

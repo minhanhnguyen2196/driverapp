@@ -3,6 +3,7 @@ import thunk from 'redux-thunk';
 import createSocketIoMiddleware from 'redux-socket.io';
 import io from 'socket.io-client/dist/socket.io';
 import rootReducer from './reducers/rootReducer';
+import request from '../utils/request';
 import getAccessToken from '../components/Authentication/getAccessToken';
 
 let socket = io('https://gettaxiapp.herokuapp.com', { jsonp: false });
@@ -15,7 +16,7 @@ socket.on('confirm connection', (data) => {
 	console.log(socket.id);
     var driverCurrentData = {
         socketId: socket.id,
-        locationId: '5a9655d9734d1d3655e9623c'
+        locationId: '5a965393734d1d3655e960fd'
     };
 
     getAccessToken()
@@ -39,87 +40,151 @@ socket.on('confirm connection', (data) => {
 
 	socket.on('driver request', (booking) => {
 		if (booking) {
-            console.log(booking);
 			store.dispatch({ type: 'SAVE_BOOKING', payload: booking });
             socket.emit('room', booking.userSocketID);
             socket.on('leave room', () => {
                 socket.emit('left room', booking.userSocketID);
+                store.dispatch({ type: 'CLEAR_STATE' });
             });
 		} else console.log('Something is wrong');
 	});
 	
 
 	socket.on('trackDriver', (location) => {
-		console.log(location);
-		var index = 0;
-		var driverMovement = [{
-                    lat: 21.027764333,
-                    long: 105.83416
-                },
-                {
-                    lat: 21.0277644,
-                    long: 105.83412
+		var pickUpLatitude = String(store.getState().booking.pickUp.latitude);
+        var pickUpLongitude = String(store.getState().booking.pickUp.longitude);
+        var currentLatitude = String(store.getState().location.latitude);
+        var currentLongitude = String(store.getState().location.longitude);
+        request.get('https://maps.googleapis.com/maps/api/directions/json')
+        .query({
+            origin: currentLatitude.concat(',', currentLongitude),
+            destination: pickUpLatitude.concat(',', pickUpLongitude),
+            key: 'AIzaSyB0MeIPhayVTnc0MOJqk0Cw6f3YIkPh2O0'
+        })
+        .finish((err, res) => {
+            //console.log(res.body);
+            var index = 0;
+            var count = 0;
+            var driverMovement = [];
+            var routes = res.body.routes[0].legs[0].steps;
+            while (index < routes.length) {
+                driverMovement[index] = routes[index].end_location;
+                index++;
+            }
+            //console.log(driverMovement[4]);
 
-                },
-                {
-                    lat: 21.0277113,
-                    long: 105.8352
-
-                },
-                {
-                    lat: 21.0275,
-                    long: 105.8361
-                }, 
-                {
-                    lat: 21.027767,
-                    long: 105.8371
-                },
-                {
-                    lat: 21.02779,
-                    long: 105.8374
-                },
-                {
-                    lat: 21.0277091,
-                    long: 105.8376
-                },
-                {
-                    lat: 21.02772,
-                    long: 105.83478
-            }];
-
-		var interval = setInterval(() => {
-                var movementObj = driverMovement[index++];
-                if (index === driverMovement.length) {
+            var interval = setInterval(() => {
+                var movementObj = driverMovement[count++];
+                if (count === driverMovement.length) {
                     clearInterval(interval);
-                    console.log(index);
                 }          
                 var driverCurrentLocation = {
                     locationId: location._id,
                     latitude: movementObj.lat,
-                    longitude: movementObj.long,
-                    status: 'driving'
+                    longitude: movementObj.lng,
+                    userSocketID: store.getState().booking.userSocketID
                 };
-                fetch('https://gettaxiapp.herokuapp.com/api/driverCurrentData/' + location._id, 
-				{
-					method: 'PUT',
-					headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json'
-				},
-					body: JSON.stringify(driverCurrentLocation)
-				})
+                var payload = {
+                    latitude: movementObj.lat,
+                    longitude: movementObj.lng,
+                };
+            getAccessToken()
+            .then((token) => {
+                fetch('https://gettaxiapp.herokuapp.com/api/driverCurrentLocation/' + location._id, 
+                {
+                    method: 'PUT',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'x-access-token': token
+                },
+                    body: JSON.stringify(driverCurrentLocation)
+                })
                 .then((response) => {
                     // Check for a successful (blank) response
                     if (response !== '') {
                         console.log('Driver Location updated');
-                    } else {
-                        console.log('Error: ' + response);
+                        store.dispatch({ type: 'FAKE_LOCATION', payload });
                     }
                 });
-            }, 5000);
-	}); 	
-});
+            })
+            .catch(err => console.log(err));
+        }, 5000);
+    });     
+    });
+    });   
+
+    socket.on('started', () => {
+        var pickUpLatitude = String(store.getState().booking.pickUp.latitude);
+        var pickUpLongitude = String(store.getState().booking.pickUp.longitude);
+        var dropOffLatitude = String(store.getState().booking.dropOff.latitude);
+        var dropOffLongitude = String(store.getState().booking.dropOff.longitude);
+        request.get('https://maps.googleapis.com/maps/api/directions/json')
+        .query({
+            origin: pickUpLatitude.concat(',', pickUpLongitude),
+            destination: dropOffLatitude.concat(',', dropOffLongitude),
+            key: 'AIzaSyB0MeIPhayVTnc0MOJqk0Cw6f3YIkPh2O0'
+        })
+        .finish((err, res) => {
+            //console.log(res.body);
+            var index = 0;
+            var count = 0;
+            var driverMovement = [];
+            var routes = res.body.routes[0].legs[0].steps;
+            while (index < routes.length) {
+                driverMovement[index] = routes[index].end_location;
+                index++;
+            }
+            //console.log(driverMovement[4]);
+
+            var interval = setInterval(() => {
+                var movementObj = driverMovement[count++];
+                if (count === driverMovement.length) {
+                    clearInterval(interval);
+                }          
+                var driverCurrentLocation = {
+                    locationId: '5a965393734d1d3655e960fd',
+                    latitude: movementObj.lat,
+                    longitude: movementObj.lng,
+                    userSocketID: store.getState().booking.userSocketID
+                };
+                var payload = {
+                    latitude: movementObj.lat,
+                    longitude: movementObj.lng,
+                };
+            getAccessToken()
+            .then((token) => {
+                fetch('https://gettaxiapp.herokuapp.com/api/driverCurrentLocation/' + driverCurrentLocation.locationId, 
+                {
+                    method: 'PUT',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'x-access-token': token
+                },
+                    body: JSON.stringify(driverCurrentLocation)
+                })
+                .then((response) => {
+                    // Check for a successful (blank) response
+                    if (response !== '') {
+                        console.log('Driver Location updated');
+                        store.dispatch({ type: 'FAKE_LOCATION', payload });
+                    }
+                });
+            })
+            .catch(err => console.log(err));
+        }, 5000);
+    });     
+    });
 
 
 export default store; 
 
+
+            // var interval = setInterval(() => {
+            // var driverCurrentLocation = {
+            //     locationId: location._id,
+            //     latitude: store.getState().location.latitude,
+            //     longitude: store.getState().location.longitude,
+            //     userSocketID: store.getState().booking.userSocketID
+            // };

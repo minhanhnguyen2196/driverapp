@@ -21,25 +21,19 @@ export default class EndTripButton extends React.Component {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        
+        flex: 1
     },
     confirmTxt: {
         color: 'white', 
         textAlign: 'center', 
         padding: 10, 
-        borderRadius: 6, 
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: 16
     },
     confirmBtn: {
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 10,
-        margin: 20,
-        width: 300, 
-        height: 40, 
-        backgroundColor: 'black', 
+        flex: 1,
+        backgroundColor: '#18722a', 
     }
 });

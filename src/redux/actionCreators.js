@@ -15,7 +15,7 @@ export function updateTripStatus(status) {
             id: getState().booking._id,
             status,
             socketID: getState().driverInfo.socketID,
-            driverID: 'B2321312'
+            driverID: 'A2321312'
         };
 
         getAccessToken()

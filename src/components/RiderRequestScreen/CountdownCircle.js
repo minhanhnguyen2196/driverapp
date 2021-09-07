@@ -16,7 +16,7 @@ export default class CountdownCircleScreen extends React.PureComponent {
 			<View style={styles.circle} >
 				<TouchableOpacity onPress={() => this.props.updateTripStatus('confirmed')} >
 					<CountdownCircle
-						seconds={30}
+						seconds={10}
 						radius={120}
 						borderWidth={8}
 						color="#0984e3"
@@ -24,7 +24,6 @@ export default class CountdownCircleScreen extends React.PureComponent {
 						textStyle={{ fontSize: 20, color: 'black' }}
 						onTimeElapsed={() => {
                             this.props.updateTripStatus('pending');
-                            this.props.clearState();
                         }}
 					/>
 				</TouchableOpacity>
@@ -33,11 +32,15 @@ export default class CountdownCircleScreen extends React.PureComponent {
 			<View style={{ justifyContent: 'center', alignItems: 'center' }}>
 				<View style={styles.pickup}>
 					<Icon style={styles.locationIcon} name="map-marker" />
-					<Text style={styles.text}>{this.props.booking.pickUp.address}</Text>
+					<Text style={styles.text}>
+                    {this.props.booking.pickUp.address.replace(", Hà Nội, Việt Nam","") }
+                    </Text>
 				</View>
                 <View style={styles.dropoff}>
                     <Icon style={styles.locationIcon} name="flag" />
-                    <Text style={styles.text}>{this.props.booking.dropOff.address}</Text>
+                    <Text style={styles.text}>
+                    {this.props.booking.dropOff.address.replace(", Hà Nội, Việt Nam","") }
+                    </Text>
                 </View>
                 <TouchableOpacity 
                     style={styles.cancelBtn} 
@@ -76,10 +79,9 @@ const styles = StyleSheet.create({
     text: {
         color: 'white',
         fontSize: 14,
-		margin: 5
     },
     locationIcon: {
-        color: 'black',
+        color: 'white',
         fontSize: 20,
         margin: 10
     },
@@ -88,10 +90,10 @@ const styles = StyleSheet.create({
     },
     pickup: {
         width,
-        borderRadius: 7,
         height: 50,
         alignItems: 'center',
         flexDirection: 'row',
+        padding: 10
 
     },
     toArrow: {
@@ -100,11 +102,11 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     dropoff: {
-        width: width * 0.9,
-        borderRadius: 7,
+        width,
         height: 50,
         alignItems: 'center',
         flexDirection: 'row',
+        padding: 10
 
     },
     acceptBtnWrapper: {
@@ -124,8 +126,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent'
     },
     cancelBtn: {
-        width: width * 0.7,
-        height: height * 0.055,
+        width: width * 0.8,
+        height: height * 0.06,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 7,

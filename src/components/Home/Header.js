@@ -16,15 +16,12 @@ export default class HeaderComponent extends React.PureComponent {
 						<Icon name='bars' style={styles.icon} />
 					</Button>
 				</Left>
-				<Body style={{ alignItems: 'center', justifyContent: 'center', flex: 1, paddingLeft: 50, flexDirection: 'row' }}>
-					<Icon name="taxi" style={styles.icon} />
-					<Text style={{ fontSize: 16, color: '#fff', fontWeight: 'bold', textAlign: 'center' }}> Driver App </Text>
+				<Body style={{ alignItems: 'center', flex: 1, flexDirection: 'row' }}>
+					<Icon name="taxi" style={styles.icon1} />
+					<Text style={{ fontSize: 16, color: '#fff', fontWeight: 'bold', textAlign: 'center' }}> 
+						Driver App 
+					</Text>
 				</Body>
-				<Right> 
-					<Button transparent >
-						<Icon name='gift' style={styles.icon} />
-					</Button>
-				</Right>
 			</Header>
 		);
 	}
@@ -33,7 +30,12 @@ export default class HeaderComponent extends React.PureComponent {
 const styles = StyleSheet.create({
 	icon: {
 		color: '#FFF',
-		fontSize: 28
+		fontSize: 28,
+	},
+	icon1: {
+		color: '#FFF',
+		fontSize: 28,
+		padding: 10
 	},
 	headerText: {
 		color: 'white',
@@ -44,7 +46,7 @@ const styles = StyleSheet.create({
 		height: 20
 	},
 	header: {
-		backgroundColor: '#34495e', 
+		backgroundColor: '#18722a', 
 		justifyContent: 'space-between', 
 		alignItems: 'center' 
 	}

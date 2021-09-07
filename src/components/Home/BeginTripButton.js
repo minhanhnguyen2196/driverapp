@@ -9,7 +9,7 @@ export default class BeginTripButton extends React.Component {
 				style={styles.confirmBtn}
 				onPress={() => this.props.updateTripStatus('started')}
 			>
-				<Text style={styles.confirmTxt}>Begin Trip</Text>
+				<Text style={styles.confirmTxt}>START YOUR TRIP</Text>
 			</TouchableOpacity>
 		</View>
 
@@ -20,23 +20,19 @@ export default class BeginTripButton extends React.Component {
 
 const styles = StyleSheet.create({
     container: {
-        alignItems: 'center',
-        
+        flex: 1
     },
     confirmTxt: {
         color: 'white', 
         textAlign: 'center', 
         padding: 10, 
-        borderRadius: 6, 
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        fontSize: 16
     },
     confirmBtn: {
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 10,
-        margin: 20,
-        width: 300, 
-        height: 40, 
-        backgroundColor: 'black', 
+        flex: 1,
+        backgroundColor: '#18722a', 
     }
 });
